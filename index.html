@@ -650,13 +650,19 @@
 
   <div class="divider"></div>
 
-  <!-- One-liner install -->
+  <!-- Quick install -->
   <section class="install-section">
     <div class="container">
-      <h2>One-liner install</h2>
-      <div class="install-block">
-        <span class="prompt" style="color: var(--text-dim);">$</span> <span style="color: var(--text);">curl -sL https://raw.githubusercontent.com/getdiskfree/diskfree/main/eject-disk.sh -o /usr/local/bin/eject-disk && chmod +x /usr/local/bin/eject-disk</span>
-        <button class="copy-small" onclick="copyText('curl -sL https://raw.githubusercontent.com/getdiskfree/diskfree/main/eject-disk.sh -o /usr/local/bin/eject-disk && chmod +x /usr/local/bin/eject-disk', this)">Copy</button>
+      <h2>Quick install</h2>
+      <p style="color: var(--text-dim); font-size: 14px; margin-bottom: 20px;">Download, inspect the source, then install:</p>
+      <div class="install-block" style="line-height: 2;">
+        <span class="d"># Download</span><br>
+        <span class="prompt" style="color: var(--text-dim);">$</span> <span style="color: var(--text);">curl -sL https://raw.githubusercontent.com/getdiskfree/diskfree/main/eject-disk.sh -o eject-disk.sh</span><br>
+        <span class="d"># Read it first — never blindly run scripts from the internet</span><br>
+        <span class="prompt" style="color: var(--text-dim);">$</span> <span style="color: var(--text);">cat eject-disk.sh</span><br>
+        <span class="d"># Install</span><br>
+        <span class="prompt" style="color: var(--text-dim);">$</span> <span style="color: var(--text);">chmod +x eject-disk.sh && sudo mv eject-disk.sh /usr/local/bin/eject-disk</span>
+        <button class="copy-small" onclick="copyText('curl -sL https://raw.githubusercontent.com/getdiskfree/diskfree/main/eject-disk.sh -o eject-disk.sh\ncat eject-disk.sh\nchmod +x eject-disk.sh && sudo mv eject-disk.sh /usr/local/bin/eject-disk', this)">Copy</button>
       </div>
     </div>
   </section>

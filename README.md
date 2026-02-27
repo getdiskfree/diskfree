@@ -24,23 +24,17 @@ No logout required. No data corruption risk. One command.
 
 ## Install
 
-### One-liner
-
-```bash
-curl -sL https://raw.githubusercontent.com/getdiskfree/diskfree/main/eject-disk.sh -o /usr/local/bin/eject-disk && chmod +x /usr/local/bin/eject-disk
-```
-
-### Manual
+### Quick install
 
 ```bash
 # Download
 curl -sL https://raw.githubusercontent.com/getdiskfree/diskfree/main/eject-disk.sh -o eject-disk.sh
 
-# Make executable
-chmod +x eject-disk.sh
+# Read it first — never blindly run scripts from the internet
+cat eject-disk.sh
 
-# (Optional) Move to PATH for global access
-sudo mv eject-disk.sh /usr/local/bin/eject-disk
+# Install
+chmod +x eject-disk.sh && sudo mv eject-disk.sh /usr/local/bin/eject-disk
 ```
 
 ## Usage
