@@ -1,0 +1,971 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DiskFree — Eject Stubborn macOS Disks</title>
+  <meta name="description" content="Free, open-source macOS utility to eject stubborn external drives without logging out. Find what's blocking, close it safely, eject cleanly.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #0a0a0b;
+      --bg-raised: #111113;
+      --bg-surface: #18181b;
+      --border: #27272a;
+      --border-subtle: #1e1e21;
+      --text: #fafafa;
+      --text-secondary: #a1a1aa;
+      --text-dim: #71717a;
+      --green: #22c55e;
+      --green-dim: #16a34a;
+      --green-glow: rgba(34, 197, 94, 0.15);
+      --yellow: #eab308;
+      --red: #ef4444;
+      --cyan: #06b6d4;
+      --mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+      --sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--sans);
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Layout ─────────────────────────────────── */
+    .container {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    section { padding: 80px 0; }
+
+    /* ── Hero ───────────────────────────────────── */
+    .hero {
+      padding: 120px 0 80px;
+      text-align: center;
+    }
+
+    .badge {
+      display: inline-block;
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--green);
+      background: var(--green-glow);
+      border: 1px solid rgba(34, 197, 94, 0.25);
+      padding: 6px 14px;
+      border-radius: 100px;
+      margin-bottom: 32px;
+    }
+
+    .hero h1 {
+      font-family: var(--mono);
+      font-size: clamp(48px, 8vw, 80px);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1.05;
+      background: linear-gradient(180deg, #fafafa 0%, #71717a 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 24px;
+    }
+
+    .hero .tagline {
+      font-size: 18px;
+      color: var(--text-secondary);
+      max-width: 560px;
+      margin: 0 auto 40px;
+      line-height: 1.7;
+    }
+
+    .cta-group {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      font-family: var(--mono);
+      font-size: 14px;
+      font-weight: 600;
+      padding: 14px 28px;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+    }
+
+    .btn-primary {
+      background: var(--green);
+      color: #0a0a0b;
+    }
+    .btn-primary:hover {
+      background: #2dd868;
+      box-shadow: 0 0 24px rgba(34, 197, 94, 0.3);
+    }
+
+    .btn-outline {
+      background: transparent;
+      color: var(--text-secondary);
+      border: 1px solid var(--border);
+    }
+    .btn-outline:hover {
+      border-color: var(--text-dim);
+      color: var(--text);
+    }
+
+    /* ── Copy feedback ─────────────────────────── */
+    .btn-primary.copied {
+      background: #16a34a;
+    }
+
+    /* ── Terminal Demo ──────────────────────────── */
+    .terminal-section {
+      padding: 40px 0 80px;
+    }
+
+    .terminal {
+      background: #0c0c0e;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow:
+        0 0 0 1px rgba(255,255,255,0.03),
+        0 20px 60px rgba(0,0,0,0.5);
+    }
+
+    .terminal-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 18px;
+      background: var(--bg-raised);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .terminal-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+    .terminal-dot.red { background: #ff5f57; }
+    .terminal-dot.yellow { background: #febc2e; }
+    .terminal-dot.green { background: #28c840; }
+
+    .terminal-title {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--text-dim);
+      margin-left: 8px;
+    }
+
+    .terminal-body {
+      padding: 24px;
+      font-family: var(--mono);
+      font-size: 13px;
+      line-height: 1.75;
+      overflow-x: auto;
+    }
+
+    .terminal-body .line { white-space: pre; }
+    .terminal-body .prompt { color: var(--text-dim); }
+    .terminal-body .cmd { color: var(--text); font-weight: 500; }
+    .terminal-body .g { color: var(--green); }
+    .terminal-body .y { color: var(--yellow); }
+    .terminal-body .r { color: var(--red); }
+    .terminal-body .c { color: var(--cyan); }
+    .terminal-body .d { color: var(--text-dim); }
+    .terminal-body .b { font-weight: 700; }
+    .terminal-body .spacer { height: 8px; }
+
+    /* ── Features Grid ─────────────────────────── */
+    .features-section h2 {
+      font-family: var(--mono);
+      font-size: 14px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--green);
+      text-align: center;
+      margin-bottom: 48px;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+    }
+
+    @media (max-width: 600px) {
+      .features-grid { grid-template-columns: 1fr; }
+    }
+
+    .feature-card {
+      background: var(--bg-raised);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 28px;
+      transition: border-color 0.2s ease;
+    }
+    .feature-card:hover {
+      border-color: var(--border);
+    }
+
+    .feature-icon {
+      font-size: 24px;
+      margin-bottom: 16px;
+      display: block;
+    }
+
+    .feature-card h3 {
+      font-family: var(--sans);
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: var(--text);
+    }
+
+    .feature-card p {
+      font-size: 14px;
+      color: var(--text-dim);
+      line-height: 1.6;
+    }
+
+    /* ── Setup Steps ───────────────────────────── */
+    .setup-section h2 {
+      font-family: var(--mono);
+      font-size: 14px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--green);
+      text-align: center;
+      margin-bottom: 48px;
+    }
+
+    .steps {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .step {
+      display: flex;
+      gap: 20px;
+      align-items: flex-start;
+    }
+
+    .step-number {
+      flex-shrink: 0;
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--mono);
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--green);
+    }
+
+    .step-content h3 {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .step-content p {
+      font-size: 14px;
+      color: var(--text-dim);
+    }
+
+    .inline-code {
+      font-family: var(--mono);
+      font-size: 13px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      padding: 2px 8px;
+      border-radius: 6px;
+      color: var(--green);
+    }
+
+    /* ── Pro Tip ────────────────────────────────── */
+    .protip {
+      margin-top: 48px;
+      background: var(--bg-raised);
+      border: 1px solid var(--border-subtle);
+      border-left: 3px solid var(--green);
+      border-radius: 0 12px 12px 0;
+      padding: 24px 28px;
+    }
+
+    .protip-label {
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--green);
+      margin-bottom: 8px;
+    }
+
+    .protip p {
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    .code-block {
+      margin-top: 12px;
+      background: #0c0c0e;
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 14px 18px;
+      font-family: var(--mono);
+      font-size: 13px;
+      color: var(--green);
+      overflow-x: auto;
+      position: relative;
+    }
+
+    .code-block .copy-small {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text-dim);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .code-block .copy-small:hover {
+      color: var(--text);
+      border-color: var(--text-dim);
+    }
+
+    /* ── Install one-liner ─────────────────────── */
+    .install-section {
+      padding: 40px 0 80px;
+      text-align: center;
+    }
+
+    .install-section h2 {
+      font-family: var(--mono);
+      font-size: 14px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--green);
+      margin-bottom: 24px;
+    }
+
+    .install-block {
+      background: #0c0c0e;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px 24px;
+      font-family: var(--mono);
+      font-size: 13px;
+      color: var(--text-secondary);
+      text-align: left;
+      overflow-x: auto;
+      position: relative;
+    }
+
+    .install-block .copy-small {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text-dim);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .install-block .copy-small:hover {
+      color: var(--text);
+      border-color: var(--text-dim);
+    }
+
+    /* ── Footer ─────────────────────────────────── */
+    footer {
+      border-top: 1px solid var(--border-subtle);
+      padding: 40px 0;
+      text-align: center;
+    }
+
+    footer p {
+      font-size: 14px;
+      color: var(--text-dim);
+    }
+
+    footer span { color: var(--green); }
+
+    /* ── Dividers ───────────────────────────────── */
+    .divider {
+      height: 1px;
+      background: var(--border-subtle);
+      margin: 0;
+    }
+
+    /* ── Animations ─────────────────────────────── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .hero, .terminal, .features-grid, .steps, .protip, .install-block {
+      animation: fadeUp 0.6s ease both;
+    }
+    .terminal { animation-delay: 0.15s; }
+    .features-grid { animation-delay: 0.1s; }
+
+    /* ── Scrollbar ──────────────────────────────── */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  </style>
+</head>
+<body>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="container">
+      <div class="badge">macOS utility</div>
+      <h1>DiskFree</h1>
+      <p class="tagline">
+        Eject stubborn macOS disks without logging out.<br>
+        Find what's blocking, close it safely, eject cleanly.
+      </p>
+      <div class="cta-group">
+        <button class="btn btn-primary" id="copyScriptBtn" onclick="copyScript()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          <span id="copyLabel">Copy Script</span>
+        </button>
+        <a class="btn btn-outline" href="https://github.com/getdiskfree/diskfree" target="_blank" rel="noopener">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+          View Source
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Terminal Demo -->
+  <section class="terminal-section">
+    <div class="container">
+      <div class="terminal">
+        <div class="terminal-bar">
+          <span class="terminal-dot red"></span>
+          <span class="terminal-dot yellow"></span>
+          <span class="terminal-dot green"></span>
+          <span class="terminal-title">Terminal — eject-disk</span>
+        </div>
+        <div class="terminal-body">
+          <div class="line"><span class="prompt">$</span> <span class="cmd">./eject-disk.sh</span></div>
+          <div class="spacer"></div>
+          <div class="line"><span class="c">╔══════════════════════════════════════════╗</span></div>
+          <div class="line"><span class="c">║</span>  <span class="g b">DiskFree</span>  <span class="d">— eject stubborn disks</span>       <span class="c">║</span></div>
+          <div class="line"><span class="c">╚══════════════════════════════════════════╝</span></div>
+          <div class="spacer"></div>
+          <div class="line"><span class="c">→</span> Scanning for external volumes...</div>
+          <div class="spacer"></div>
+          <div class="line"><span class="b">Found 2 volume(s):</span></div>
+          <div class="spacer"></div>
+          <div class="line">  <span class="g">1</span>) Extreme SSD</div>
+          <div class="line">  <span class="g">2</span>) GoPro SD</div>
+          <div class="spacer"></div>
+          <div class="line"><span class="c">→</span> Select volume to eject [1-2]: <span class="cmd">1</span></div>
+          <div class="spacer"></div>
+          <div class="line"><span class="c">→</span> Checking what's using <span class="b">Extreme SSD</span>...</div>
+          <div class="spacer"></div>
+          <div class="line"><span class="b">Blocking processes:</span></div>
+          <div class="spacer"></div>
+          <div class="line">  <span class="d">●</span> <span class="b">Preview</span> (PID 1847) — <span class="d">reading</span> — <span class="b">user app</span></div>
+          <div class="line">  <span class="r">●</span> <span class="b">mds_stores</span> (PID 312) — <span class="d">reading</span> — <span class="d">system</span></div>
+          <div class="line">  <span class="r">●</span> <span class="b">fseventsd</span> (PID 97) — <span class="d">reading</span> — <span class="d">system</span></div>
+          <div class="spacer"></div>
+          <div class="line"><span class="g">✓</span> 1 user app(s), 2 system process(es)</div>
+          <div class="line">  <span class="d">System processes (Spotlight, iCloud, etc.) release automatically on unmount</span></div>
+          <div class="spacer"></div>
+          <div class="line"><span class="c">→</span> Close blocking apps and eject? (Y/n): <span class="cmd">y</span></div>
+          <div class="spacer"></div>
+          <div class="line"><span class="c">→</span> Closing <span class="b">Preview</span> (PID 1847)...</div>
+          <div class="line"><span class="g">✓</span> Preview closed</div>
+          <div class="spacer"></div>
+          <div class="line"><span class="c">→</span> Attempting to eject <span class="b">Extreme SSD</span>...</div>
+          <div class="spacer"></div>
+          <div class="line"><span class="g">✓</span> <span class="g b">Extreme SSD ejected successfully!</span></div>
+          <div class="line">  <span class="d">Safe to remove the disk.</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- Features -->
+  <section class="features-section">
+    <div class="container">
+      <h2>What it does</h2>
+      <div class="features-grid">
+        <div class="feature-card">
+          <span class="feature-icon">&#128269;</span>
+          <h3>Finds blockers</h3>
+          <p>Shows which apps and processes are preventing ejection, and whether they're reading or writing to the disk.</p>
+        </div>
+        <div class="feature-card">
+          <span class="feature-icon">&#128737;&#65039;</span>
+          <h3>Safe by default</h3>
+          <p>Warns you if any process is actively writing before taking action. No data corruption risk.</p>
+        </div>
+        <div class="feature-card">
+          <span class="feature-icon">&#9889;</span>
+          <h3>One command</h3>
+          <p>Closes blocking apps and ejects cleanly — no logout, no Force Quit, no restart required.</p>
+        </div>
+        <div class="feature-card">
+          <span class="feature-icon">&#127919;</span>
+          <h3>Smart detection</h3>
+          <p>Separates user apps from system processes (Spotlight, iCloud) that release automatically on unmount.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- Setup -->
+  <section class="setup-section">
+    <div class="container">
+      <h2>Get started</h2>
+      <div class="steps">
+        <div class="step">
+          <div class="step-number">1</div>
+          <div class="step-content">
+            <h3>Copy or download the script</h3>
+            <p>Click <strong>Copy Script</strong> above and paste into a file called <span class="inline-code">eject-disk.sh</span>, or download it directly.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-number">2</div>
+          <div class="step-content">
+            <h3>Make it executable</h3>
+            <div class="code-block">
+              chmod +x eject-disk.sh
+              <button class="copy-small" onclick="copyText('chmod +x eject-disk.sh', this)">Copy</button>
+            </div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-number">3</div>
+          <div class="step-content">
+            <h3>Run it</h3>
+            <div class="code-block">
+              ./eject-disk.sh<button class="copy-small" onclick="copyText('./eject-disk.sh', this)">Copy</button>
+            </div>
+            <p style="margin-top: 8px; color: var(--text-dim); font-size: 14px;">
+              Or pass a volume name directly: <span class="inline-code">./eject-disk.sh "Extreme SSD"</span>
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pro Tip -->
+      <div class="protip">
+        <div class="protip-label">Pro tip</div>
+        <p>Add to your PATH for global access — run from anywhere, no path needed:</p>
+        <div class="code-block">
+          sudo mv eject-disk.sh /usr/local/bin/eject-disk<button class="copy-small" onclick="copyText('sudo mv eject-disk.sh /usr/local/bin/eject-disk', this)">Copy</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- One-liner install -->
+  <section class="install-section">
+    <div class="container">
+      <h2>One-liner install</h2>
+      <div class="install-block">
+        <span class="prompt" style="color: var(--text-dim);">$</span> <span style="color: var(--text);">curl -sL https://raw.githubusercontent.com/getdiskfree/diskfree/main/eject-disk.sh -o /usr/local/bin/eject-disk && chmod +x /usr/local/bin/eject-disk</span>
+        <button class="copy-small" onclick="copyText('curl -sL https://raw.githubusercontent.com/getdiskfree/diskfree/main/eject-disk.sh -o /usr/local/bin/eject-disk && chmod +x /usr/local/bin/eject-disk', this)">Copy</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container">
+      <p><span>DiskFree</span> — born from a stubborn Extreme SSD that wouldn't eject.</p>
+    </div>
+  </footer>
+
+  <script>
+    // ── Shell script content ──────────────────────
+    const SCRIPT = `#!/bin/bash
+# DiskFree — Eject stubborn macOS disks without logging out.
+# https://github.com/getdiskfree/diskfree
+# License: MIT
+
+set -euo pipefail
+
+# ── Colors ──────────────────────────────────────────────────────────
+RED='\\033[0;31m'
+GREEN='\\033[0;32m'
+YELLOW='\\033[1;33m'
+CYAN='\\033[0;36m'
+BOLD='\\033[1m'
+DIM='\\033[2m'
+RESET='\\033[0m'
+
+# ── Header ──────────────────────────────────────────────────────────
+print_header() {
+  echo ""
+  echo -e "\${CYAN}╔══════════════════════════════════════════╗\${RESET}"
+  echo -e "\${CYAN}║\${RESET}  \${GREEN}\${BOLD}DiskFree\${RESET}  \${DIM}— eject stubborn disks\${RESET}       \${CYAN}║\${RESET}"
+  echo -e "\${CYAN}╚══════════════════════════════════════════╝\${RESET}"
+  echo ""
+}
+
+# ── Helpers ─────────────────────────────────────────────────────────
+info()    { echo -e "\${GREEN}✓\${RESET} $1"; }
+warn()    { echo -e "\${YELLOW}⚠\${RESET} $1"; }
+error()   { echo -e "\${RED}✗\${RESET} $1"; }
+step()    { echo -e "\${CYAN}→\${RESET} $1"; }
+
+# Known system processes that auto-release on unmount
+SYSTEM_PROCS="mds|mds_stores|mdworker|mdworker_shared|fseventsd|bird|cloudd|diskarbitrationd|fsck|revisiond"
+
+is_system_process() {
+  local proc_name="$1"
+  echo "$proc_name" | grep -qE "^(\${SYSTEM_PROCS})$"
+}
+
+# ── List external volumes ───────────────────────────────────────────
+list_volumes() {
+  local volumes=()
+  while IFS= read -r vol; do
+    case "$vol" in
+      "Macintosh HD"|"Macintosh HD - Data"|"Recovery"|"Preboot"|"VM"|"Update") continue ;;
+    esac
+    volumes+=("$vol")
+  done < <(ls /Volumes 2>/dev/null)
+  printf '%s\\n' "\${volumes[@]}"
+}
+
+# ── Find blockers ───────────────────────────────────────────────────
+find_blockers() {
+  local volume_path="$1"
+  lsof +D "$volume_path" 2>/dev/null | tail -n +2 || true
+}
+
+# ── Parse blocker details ──────────────────────────────────────────
+parse_blockers() {
+  local lsof_output="$1"
+  local seen_pids=""
+
+  while IFS= read -r line; do
+    [ -z "$line" ] && continue
+    local proc_name pid fd_info
+    proc_name=$(echo "$line" | awk '{print $1}')
+    pid=$(echo "$line" | awk '{print $2}')
+    fd_info=$(echo "$line" | awk '{print $4}')
+
+    if echo "$seen_pids" | grep -q ":\${pid}:"; then continue; fi
+    seen_pids="\${seen_pids}:\${pid}:"
+
+    local rw_status="read"
+    if echo "$fd_info" | grep -qE '[uw]'; then rw_status="write"; fi
+
+    local proc_type="user"
+    if is_system_process "$proc_name"; then proc_type="system"; fi
+
+    echo "\${proc_name}|\${pid}|\${rw_status}|\${proc_type}"
+  done <<< "$lsof_output"
+}
+
+# ── Analyze blockers (sets global vars, no output) ─────────────────
+analyze_blockers() {
+  local blockers="$1"
+  HAS_WRITERS=false
+  USER_COUNT=0
+  SYSTEM_COUNT=0
+
+  while IFS='|' read -r name pid rw type; do
+    [ -z "$name" ] && continue
+    if [ "$type" = "system" ]; then
+      SYSTEM_COUNT=$((SYSTEM_COUNT + 1))
+    else
+      USER_COUNT=$((USER_COUNT + 1))
+    fi
+    if [ "$rw" = "write" ]; then
+      HAS_WRITERS=true
+    fi
+  done <<< "$blockers"
+}
+
+# ── Display blockers ───────────────────────────────────────────────
+display_blockers() {
+  local blockers="$1"
+
+  echo ""
+  echo -e "\${BOLD}Blocking processes:\${RESET}"
+  echo ""
+
+  while IFS='|' read -r name pid rw type; do
+    [ -z "$name" ] && continue
+    local type_label rw_label rw_color
+    if [ "$type" = "system" ]; then
+      type_label="\${DIM}system\${RESET}"
+    else
+      type_label="\${BOLD}user app\${RESET}"
+    fi
+
+    if [ "$rw" = "write" ]; then
+      rw_label="\${RED}\${BOLD}WRITING\${RESET}"
+      rw_color="\${RED}"
+    else
+      rw_label="\${DIM}reading\${RESET}"
+      rw_color="\${DIM}"
+    fi
+
+    echo -e "  \${rw_color}●\${RESET} \${BOLD}\${name}\${RESET} (PID \${pid}) — \${rw_label} — \${type_label}"
+  done <<< "$blockers"
+
+  echo ""
+  info "\${USER_COUNT} user app(s), \${SYSTEM_COUNT} system process(es)"
+
+  if [ "\$SYSTEM_COUNT" -gt 0 ]; then
+    echo -e "  \${DIM}System processes (Spotlight, iCloud, etc.) release automatically on unmount\${RESET}"
+  fi
+
+  if \$HAS_WRITERS; then
+    echo ""
+    warn "\${RED}\${BOLD}WARNING: One or more processes are actively WRITING to this disk!\${RESET}"
+    warn "Ejecting now could cause data corruption or file loss."
+  fi
+}
+
+# ── Close user apps ────────────────────────────────────────────────
+close_user_apps() {
+  local blockers="$1"
+  local closed=0
+
+  while IFS='|' read -r name pid rw type; do
+    [ -z "$name" ] && continue
+    [ "$type" = "system" ] && continue
+    step "Closing \${BOLD}\${name}\${RESET} (PID \${pid})..."
+
+    if kill "$pid" 2>/dev/null; then
+      local waited=0
+      while kill -0 "$pid" 2>/dev/null && [ $waited -lt 5 ]; do
+        sleep 1
+        waited=$((waited + 1))
+      done
+
+      if kill -0 "$pid" 2>/dev/null; then
+        warn "\${name} didn't close gracefully, sending SIGKILL..."
+        kill -9 "$pid" 2>/dev/null || true
+        sleep 1
+      fi
+
+      if ! kill -0 "$pid" 2>/dev/null; then
+        info "\${name} closed"
+        closed=$((closed + 1))
+      else
+        error "Could not close \${name} (PID \${pid})"
+      fi
+    else
+      error "Could not signal \${name} (PID \${pid}) — permission denied?"
+    fi
+  done <<< "$blockers"
+
+  echo "$closed"
+}
+
+# ── Eject disk ─────────────────────────────────────────────────────
+eject_disk() {
+  local volume_name="$1"
+  local volume_path="/Volumes/\${volume_name}"
+
+  step "Attempting to eject \${BOLD}\${volume_name}\${RESET}..."
+
+  if diskutil unmountDisk "$volume_path" 2>/dev/null; then
+    echo ""
+    info "\${GREEN}\${BOLD}\${volume_name} ejected successfully!\${RESET}"
+    echo -e "  \${DIM}Safe to remove the disk.\${RESET}"
+    return 0
+  fi
+
+  warn "Normal eject failed. Trying force unmount..."
+
+  if diskutil unmountDisk force "$volume_path" 2>/dev/null; then
+    echo ""
+    info "\${GREEN}\${BOLD}\${volume_name} force-ejected successfully!\${RESET}"
+    echo -e "  \${DIM}Safe to remove the disk.\${RESET}"
+    return 0
+  fi
+
+  echo ""
+  error "Could not eject \${volume_name}. Try closing all apps manually or restart Finder."
+  return 1
+}
+
+# ── Main ────────────────────────────────────────────────────────────
+main() {
+  print_header
+  local target_volume=""
+
+  if [ $# -gt 0 ]; then
+    target_volume="$1"
+    if [ ! -d "/Volumes/\${target_volume}" ]; then
+      error "Volume '\${target_volume}' not found in /Volumes"
+      echo ""
+      echo "Available volumes:"
+      list_volumes | while read -r v; do echo "  • $v"; done
+      exit 1
+    fi
+  else
+    step "Scanning for external volumes..."
+    echo ""
+
+    local volumes=()
+    while IFS= read -r v; do
+      [ -z "$v" ] && continue
+      volumes+=("$v")
+    done < <(list_volumes)
+
+    if [ \${#volumes[@]} -eq 0 ]; then
+      warn "No external volumes found."
+      exit 0
+    fi
+
+    echo -e "\${BOLD}Found \${#volumes[@]} volume(s):\${RESET}"
+    echo ""
+    for i in "\${!volumes[@]}"; do
+      echo -e "  \${GREEN}$((i + 1))\${RESET}) \${volumes[$i]}"
+    done
+    echo ""
+
+    local choice
+    read -rp "$(echo -e "\${CYAN}→\${RESET} Select volume to eject [1-\${#volumes[@]}]: ")" choice
+
+    if ! [[ "$choice" =~ ^[0-9]+$ ]] || [ "$choice" -lt 1 ] || [ "$choice" -gt "\${#volumes[@]}" ]; then
+      error "Invalid selection."
+      exit 1
+    fi
+
+    target_volume="\${volumes[$((choice - 1))]}"
+  fi
+
+  local volume_path="/Volumes/\${target_volume}"
+  echo ""
+  step "Checking what's using \${BOLD}\${target_volume}\${RESET}..."
+
+  local lsof_output
+  lsof_output=$(find_blockers "$volume_path")
+
+  if [ -z "$lsof_output" ]; then
+    info "No blocking processes found."
+    echo ""
+    eject_disk "$target_volume"
+    exit $?
+  fi
+
+  local blockers
+  blockers=$(parse_blockers "$lsof_output")
+
+  # Analyze sets HAS_WRITERS, USER_COUNT, SYSTEM_COUNT globals
+  analyze_blockers "$blockers"
+  display_blockers "$blockers"
+
+  echo ""
+
+  if [ "\$USER_COUNT" -eq 0 ]; then
+    info "Only system processes are blocking — these release on unmount."
+    echo ""
+    eject_disk "$target_volume"
+    exit $?
+  fi
+
+  if [ "\$HAS_WRITERS" = "true" ]; then
+    echo ""
+    echo -e "\${RED}\${BOLD}⚠  ACTIVE WRITES DETECTED\${RESET}"
+    echo -e "\${RED}Closing writing processes may cause data loss.\${RESET}"
+    read -rp "$(echo -e "\${YELLOW}→\${RESET} Continue anyway? (y/N): ")" confirm
+    if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
+      echo ""
+      warn "Aborted. Wait for writes to complete, then try again."
+      exit 0
+    fi
+  else
+    read -rp "$(echo -e "\${CYAN}→\${RESET} Close blocking apps and eject? (Y/n): ")" confirm
+    if [[ "$confirm" =~ ^[Nn]$ ]]; then
+      echo ""
+      warn "Aborted."
+      exit 0
+    fi
+  fi
+
+  echo ""
+  close_user_apps "$blockers" > /dev/null
+  sleep 1
+  eject_disk "$target_volume"
+}
+
+main "$@"`;
+
+    // ── Copy functions ────────────────────────────
+    function copyScript() {
+      navigator.clipboard.writeText(SCRIPT).then(() => {
+        const btn = document.getElementById('copyScriptBtn');
+        const label = document.getElementById('copyLabel');
+        btn.classList.add('copied');
+        label.textContent = 'Copied!';
+        setTimeout(() => {
+          btn.classList.remove('copied');
+          label.textContent = 'Copy Script';
+        }, 2000);
+      });
+    }
+
+    function copyText(text, el) {
+      navigator.clipboard.writeText(text).then(() => {
+        const orig = el.textContent;
+        el.textContent = 'Copied!';
+        setTimeout(() => { el.textContent = orig; }, 1500);
+      });
+    }
+  </script>
+</body>
+</html>
