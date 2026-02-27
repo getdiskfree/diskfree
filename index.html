@@ -661,6 +661,26 @@
     </div>
   </section>
 
+  <!-- Security & Disclaimer -->
+  <section style="padding: 40px 0 80px;">
+    <div class="container">
+      <div style="background: var(--bg-raised); border: 1px solid var(--border-subtle); border-left: 3px solid var(--yellow); border-radius: 0 12px 12px 0; padding: 28px;">
+        <div style="font-family: var(--mono); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--yellow); margin-bottom: 12px;">Security &amp; Disclaimer</div>
+        <p style="font-size: 14px; color: var(--text-secondary); line-height: 1.7; margin-bottom: 12px;">
+          <strong style="color: var(--text);">Never blindly run shell scripts from the internet.</strong> That includes this one. Before running DiskFree — or any script you download — you should read the source code and understand what it does. The full script is <a href="https://github.com/getdiskfree/diskfree/blob/main/eject-disk.sh" target="_blank" rel="noopener" style="color: var(--green); text-decoration: none;">open source on GitHub</a> for exactly this reason.
+        </p>
+        <p style="font-size: 14px; color: var(--text-secondary); line-height: 1.7; margin-bottom: 12px;">
+          <strong style="color: var(--text);">What this script does:</strong> It uses <span class="inline-code">lsof</span> to find processes with open file handles on your disk, sends <span class="inline-code">SIGTERM</span> to close blocking user apps (not <span class="inline-code">kill -9</span>), and calls <span class="inline-code">diskutil unmountDisk</span> to eject. It does <em>not</em> modify system files, install anything, or require root access (unless you move it to <span class="inline-code">/usr/local/bin</span>).
+        </p>
+        <p style="font-size: 14px; color: var(--text-dim); line-height: 1.7; margin-bottom: 0;">
+          This software is provided "as is", without warranty of any kind. Use at your own risk. Always ensure important files are saved before closing blocking processes. If a process is actively writing to your disk, DiskFree will warn you — heed that warning.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
   <!-- Footer -->
   <footer>
     <div class="container">
