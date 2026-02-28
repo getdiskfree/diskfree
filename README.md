@@ -24,17 +24,23 @@ No logout required. No data corruption risk. One command.
 
 ## Install
 
-### Quick install
+### One-liner
+
+```bash
+curl -sL https://raw.githubusercontent.com/getdiskfree/diskfree/main/eject-disk.sh -o /usr/local/bin/eject-disk && chmod +x /usr/local/bin/eject-disk
+```
+
+### Manual
 
 ```bash
 # Download
 curl -sL https://raw.githubusercontent.com/getdiskfree/diskfree/main/eject-disk.sh -o eject-disk.sh
 
-# Read it first — never blindly run scripts from the internet
-cat eject-disk.sh
+# Make executable
+chmod +x eject-disk.sh
 
-# Install
-chmod +x eject-disk.sh && sudo mv eject-disk.sh /usr/local/bin/eject-disk
+# (Optional) Move to PATH for global access
+sudo mv eject-disk.sh /usr/local/bin/eject-disk
 ```
 
 ## Usage
@@ -108,21 +114,13 @@ DiskFree uses `lsof` to find all processes with open file handles on the target 
 - Anyone who's ever seen "The disk couldn't be ejected" and had to log out
 - GoPro, Insta360, and action camera users
 
-## Security & Disclaimer
+## Good to Know
 
-**Never blindly run shell scripts from the internet.** That includes this one. Before running DiskFree — or any script you download — always read the source code and understand what it does.
+DiskFree is a single readable bash file with no dependencies, no network calls, and no telemetry. It uses standard macOS tools (`lsof`, `kill`, `diskutil`) and nothing else. The source is fully open — we recommend reviewing any script before running it on your machine.
 
-**What this script does:** It uses `lsof` to find processes with open file handles on your disk, sends `SIGTERM` (graceful close) to blocking user apps, and calls `diskutil unmountDisk` to eject. It does *not* modify system files, install anything, or require root access (unless you move it to `/usr/local/bin`).
+If a process is actively writing to your disk, DiskFree will warn you before taking action. Save your work before closing blocking apps.
 
-**What this script does NOT do:** It does not access the internet, collect telemetry, modify your files, or touch anything outside the target volume's process list. You can verify this yourself — it's a single, readable bash file.
-
-**Best practices:**
-- Read the script before running it: `cat eject-disk.sh`
-- Verify the checksum if you download from a URL
-- If a process is actively writing to your disk, DiskFree will warn you — heed that warning
-- Always ensure important work is saved before closing blocking processes
-
-This software is provided "as is", without warranty of any kind, express or implied. Use at your own risk. See the [MIT License](LICENSE) for full terms.
+This software is provided "as is" under the [MIT License](LICENSE).
 
 ## Contributing
 

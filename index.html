@@ -650,19 +650,13 @@
 
   <div class="divider"></div>
 
-  <!-- Quick install -->
+  <!-- One-liner install -->
   <section class="install-section">
     <div class="container">
-      <h2>Quick install</h2>
-      <p style="color: var(--text-dim); font-size: 14px; margin-bottom: 20px;">Download, inspect the source, then install:</p>
-      <div class="install-block" style="line-height: 2;">
-        <span class="d"># Download</span><br>
-        <span class="prompt" style="color: var(--text-dim);">$</span> <span style="color: var(--text);">curl -sL https://raw.githubusercontent.com/getdiskfree/diskfree/main/eject-disk.sh -o eject-disk.sh</span><br>
-        <span class="d"># Read it first — never blindly run scripts from the internet</span><br>
-        <span class="prompt" style="color: var(--text-dim);">$</span> <span style="color: var(--text);">cat eject-disk.sh</span><br>
-        <span class="d"># Install</span><br>
-        <span class="prompt" style="color: var(--text-dim);">$</span> <span style="color: var(--text);">chmod +x eject-disk.sh && sudo mv eject-disk.sh /usr/local/bin/eject-disk</span>
-        <button class="copy-small" onclick="copyText('curl -sL https://raw.githubusercontent.com/getdiskfree/diskfree/main/eject-disk.sh -o eject-disk.sh\ncat eject-disk.sh\nchmod +x eject-disk.sh && sudo mv eject-disk.sh /usr/local/bin/eject-disk', this)">Copy</button>
+      <h2>One-liner install</h2>
+      <div class="install-block">
+        <span class="prompt" style="color: var(--text-dim);">$</span> <span style="color: var(--text);">curl -sL https://raw.githubusercontent.com/getdiskfree/diskfree/main/eject-disk.sh -o /usr/local/bin/eject-disk && chmod +x /usr/local/bin/eject-disk</span>
+        <button class="copy-small" onclick="copyText('curl -sL https://raw.githubusercontent.com/getdiskfree/diskfree/main/eject-disk.sh -o /usr/local/bin/eject-disk && chmod +x /usr/local/bin/eject-disk', this)">Copy</button>
       </div>
     </div>
   </section>
@@ -671,15 +665,12 @@
   <section style="padding: 40px 0 80px;">
     <div class="container">
       <div style="background: var(--bg-raised); border: 1px solid var(--border-subtle); border-left: 3px solid var(--yellow); border-radius: 0 12px 12px 0; padding: 28px;">
-        <div style="font-family: var(--mono); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--yellow); margin-bottom: 12px;">Security &amp; Disclaimer</div>
+        <div style="font-family: var(--mono); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--yellow); margin-bottom: 12px;">Good to know</div>
         <p style="font-size: 14px; color: var(--text-secondary); line-height: 1.7; margin-bottom: 12px;">
-          <strong style="color: var(--text);">Never blindly run shell scripts from the internet.</strong> That includes this one. Before running DiskFree — or any script you download — you should read the source code and understand what it does. The full script is <a href="https://github.com/getdiskfree/diskfree/blob/main/eject-disk.sh" target="_blank" rel="noopener" style="color: var(--green); text-decoration: none;">open source on GitHub</a> for exactly this reason.
-        </p>
-        <p style="font-size: 14px; color: var(--text-secondary); line-height: 1.7; margin-bottom: 12px;">
-          <strong style="color: var(--text);">What this script does:</strong> It uses <span class="inline-code">lsof</span> to find processes with open file handles on your disk, sends <span class="inline-code">SIGTERM</span> to close blocking user apps (not <span class="inline-code">kill -9</span>), and calls <span class="inline-code">diskutil unmountDisk</span> to eject. It does <em>not</em> modify system files, install anything, or require root access (unless you move it to <span class="inline-code">/usr/local/bin</span>).
+          DiskFree is <a href="https://github.com/getdiskfree/diskfree/blob/main/eject-disk.sh" target="_blank" rel="noopener" style="color: var(--green); text-decoration: none;">fully open source</a> — a single readable bash file with no dependencies, no network calls, and no telemetry. It uses <span class="inline-code">lsof</span>, <span class="inline-code">kill</span>, and <span class="inline-code">diskutil</span> — standard macOS tools. We recommend reviewing any script before running it on your machine.
         </p>
         <p style="font-size: 14px; color: var(--text-dim); line-height: 1.7; margin-bottom: 0;">
-          This software is provided "as is", without warranty of any kind. Use at your own risk. Always ensure important files are saved before closing blocking processes. If a process is actively writing to your disk, DiskFree will warn you — heed that warning.
+          If a process is actively writing to your disk, DiskFree will warn you before taking action. Save your work before closing blocking apps. This software is provided "as is" under the <a href="https://github.com/getdiskfree/diskfree/blob/main/LICENSE" target="_blank" rel="noopener" style="color: var(--text-dim); text-decoration: underline;">MIT License</a>.
         </p>
       </div>
     </div>
